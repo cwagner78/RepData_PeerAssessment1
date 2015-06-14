@@ -1,24 +1,108 @@
 ---
 title: "Reproducible Research: Peer Assessment 1"
 output: 
-  html_document:
-    keep_md: true
+html_document:
+keep_md: true
 ---
 
 
 ## Loading and preprocessing the data
-
-
+```{r}
+unzip("activity.zip")
+dat<-read.csv("activity.csv")
+dat$date<-as.Date(dat$date)
+```
 
 ## What is mean total number of steps taken per day?
+
+We use tapply to sum the steps by date. 
+```{r}
+StepsPerDay<-tapply(dat$steps,dat$date,sum,na.rm=TRUE)
+hist(StepsPerDay,breaks=10)
+```
+
+From the above histogram we see that there are a lot of days with apparently zero number of steps. This is actually due to missing values for entire days.  
+
+The mean and median of the number of steps per day are 
+```{r}
+mean(StepsPerDay)
+median(StepsPerDay)
+```
+
+If we do not remove NAs when computing the sum of steps, we get NAs for days that have at least one NA. Hence, the historam below considers only days with full information:
+```{r}
+StepsPerDay<-tapply(dat$steps,dat$date,sum,na.rm=FALSE)
+hist(StepsPerDay,breaks=10)
+```
+
+
+The mean and median of this distribution is:
+```{r}
+mean(StepsPerDay,na.rm=TRUE)
+median(StepsPerDay,na.rm=TRUE)
+```
 
 
 
 ## What is the average daily activity pattern?
 
+We first create an actual time variable from the interval variable.
+```{r}
+suppressPackageStartupMessages(library(dplyr))
+dat$time<-as.character(dat$interval)
+dat<-mutate(dat,time=ifelse(nchar(time)==1,paste("0",time,sep=""),time))
+dat<-mutate(dat,time=ifelse(nchar(time)==2,paste("0",time,sep=""),time))
+dat<-mutate(dat,time=ifelse(nchar(time)==3,paste("0",time,sep=""),time))
+dat<-mutate(dat,time=paste(substr(time,1,2),substr(time,3,4),sep=":"))
+dat$time<-as.POSIXct(dat$time,format="%H:%M")
+```
 
+Next, we group the data by this variable and compute the mean. Then we plot the data as a function of time
+```{r}
+meanStepsPerInterval<-group_by(dat,time) %>% summarize(meanSteps=mean(steps,na.rm=TRUE),interval=interval[1])
+plot(meanStepsPerInterval$time,meanStepsPerInterval$meanSteps,type="l")
+```
+
+Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
+
+```{r}
+meanStepsPerInterval[which.max(meanStepsPerInterval$meanSteps),"interval"]
+```
+
+Hence, the 5-minute interval from 8:35 to 8:40 contains on average the most steps: 
+```{r}
+max(meanStepsPerInterval$meanSteps)
+```
 
 ## Imputing missing values
+
+The number of incomplete cases is, i.e. at least one NA in the row:    
+```{r}
+sum(!complete.cases(dat))
+```
+
+We impute values by using the mean for that 5-minute interval.
+```{r}
+dat_imputed <- dat
+for(i in 1:length(dat_imputed$steps)){
+        if(is.na(dat_imputed$steps[i])==TRUE ){
+                dat_imputed$steps[i]<- 
+                      as.numeric(meanStepsPerInterval[meanStepsPerInterval$interval==dat_imputed$interval[i],"meanSteps"])
+        }
+}
+```
+
+We use again tapply to sum the steps by date. 
+```{r}
+StepsPerDayImputed<-tapply(dat_imputed$steps,dat$date,sum,na.rm=TRUE)
+hist(StepsPerDayImputed,breaks=10)
+```
+
+The mean and median of the total number of steps are now:
+```{r}
+mean(StepsPerDayImputed)
+median(StepsPerDayImputed)
+```
 
 
 
