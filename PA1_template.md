@@ -132,11 +132,11 @@ sum(!complete.cases(dat))
 We impute values by using the mean number of steps of the respective 5-minute interval.
 
 ```r
-dat_imputed <- dat
-for(i in 1:length(dat_imputed$steps)){
-        if(is.na(dat_imputed$steps[i])==TRUE ){
-                dat_imputed$steps[i]<- 
-                      as.numeric(meanStepsPerInterval[meanStepsPerInterval$interval==dat_imputed$interval[i],"meanSteps"])
+datImputed <- dat
+for(i in 1:length(datImputed$steps)){
+        if(is.na(datImputed$steps[i])==TRUE ){
+                datImputed$steps[i]<- 
+                      as.numeric(meanStepsPerInterval[meanStepsPerInterval$interval==datImputed$interval[i],"meanSteps"])
         }
 }
 ```
@@ -144,7 +144,7 @@ for(i in 1:length(dat_imputed$steps)){
 We use again tapply to sum the steps by date. 
 
 ```r
-StepsPerDayImputed<-tapply(dat_imputed$steps,dat$date,sum,na.rm=TRUE)
+StepsPerDayImputed<-tapply(datImputed$steps,dat$date,sum,na.rm=TRUE)
 hist(StepsPerDayImputed,breaks=10,xlab="Steps per Day",main="Histogram of total number of steps per day (after imputing)")
 ```
 
@@ -184,7 +184,7 @@ Sys.setlocale(category = "LC_ALL", locale = "US")
 We create a factor variable called *day* with two levels - "weekday" and "weekend" indicating whether a given date is a weekday or weekend day:
 
 ```r
-dat_imputed$day<-factor(ifelse(weekdays(dat_imputed$date) %in% c("Saturday","Sunday"),"Weekend","Weekday"))
+datImputed$day<-factor(ifelse(weekdays(datImputed$date) %in% c("Saturday","Sunday"),"Weekend","Weekday"))
 ```
 
 Now we group the data by day-type and time interval and compute the mean number of steps for each group.
@@ -192,7 +192,7 @@ Now we group the data by day-type and time interval and compute the mean number 
 
 ```r
 meanStepsPerInterval<-
-      group_by(dat_imputed,day,time) %>% summarize(meanSteps=mean(steps),interval=interval[1])
+      group_by(datImputed,day,time) %>% summarize(meanSteps=mean(steps),interval=interval[1])
 ```
 
 We plot the time series using ggplot2 for the weekdays and weekend.
